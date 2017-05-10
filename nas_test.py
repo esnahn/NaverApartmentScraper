@@ -70,13 +70,25 @@ class List(unittest.TestCase):
                 ("4182032500", "청평면"),
                 ("3017010300", "도마동")]
 
-
         apartments = nascraper.scrape_list([emd_id for emd_id, _ in emds], nascraper.loc4_url, nascraper.loc4_id)
 
         self.assertTrue(apartments)
         for apt_id, name in apartments:
             if apt_id in correct_apt.keys():
                 self.assertEqual(name, correct_apt[apt_id])
+
+    def test_csv_save(self):
+        columns = ["ID", "name"]
+        emds = [("1168010600", "대치동"),
+                ("4182032500", "청평면"),
+                ("3017010300", "도마동")]
+
+        nascraper.save_to_csv("./test_emd.csv", columns, emds)
+        read_col, read_list = nascraper.read_from_csv("./test_emd.csv")
+
+        self.assertListEqual(columns, read_col)
+        self.assertListEqual(emds, read_list)
+
 
 if __name__ == '__main__':
     unittest.main()
