@@ -1,5 +1,7 @@
 import nascraper
 import unittest
+from urllib.request import urlopen
+import os
 
 
 class List(unittest.TestCase):
@@ -88,6 +90,42 @@ class List(unittest.TestCase):
 
         self.assertListEqual(columns, read_col)
         self.assertListEqual(emds, read_list)
+
+
+class Apartments(unittest.TestCase):
+    def test_scrape_fp(self):
+        apts = [("104651", "청일덱스빌(3~7동)", "gar", "ba", "ge")]
+
+        # (apt_id, fp_id, area, entrance_type, rooms, baths, units)
+        correct_fp = [
+            ("104651", "101", '78.33', "복합식", '3', '2', '1', ''),
+            ("104651", "106", '84.62', "복합식", '3', '2', '7', ''),
+            ("104651", "108", '83.58', "복합식", '3', '2', '6', ''),
+            ("104651", "111", '84.92', "복합식", '3', '2', '14', "./test/" + "104651_111.jpg")
+        ]
+        correct_fp_img_url = [
+            "http://landthumb.phinf.naver.net/20160620_5/hscp_img_1466414709037wBvWd_JPEG/photoinfra_1466414708802.jpg"]
+
+        try:
+            os.remove(nascraper.path_fp + "-test")
+        except OSError:
+            pass
+
+        for filepath in [x[7] for x in correct_fp if x[7]]:
+            try:
+                os.remove(filepath)
+            except OSError:
+                pass
+
+        nascraper.scrape_apt_fp([x[0] for x in apts], nascraper.path_fp + "-test", "./test/")
+        # create list of floorplans and downloads floorplan images to dir_fp
+
+        _, fps = nascraper.read_from_csv(nascraper.path_fp + "-test")
+        self.assertListEqual(fps, correct_fp)
+
+        for filepath, url in zip([x[7] for x in correct_fp if x[7]], correct_fp_img_url):
+            with open(filepath, 'rb') as fp_file:
+                self.assertEqual(fp_file.read(), urlopen(url).read())
 
 
 if __name__ == '__main__':
