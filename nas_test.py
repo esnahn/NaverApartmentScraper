@@ -95,12 +95,14 @@ class List(unittest.TestCase):
 class Apartments(unittest.TestCase):
     def test_scrape_info(self):
         apts = [("104651", "청일덱스빌(3~7동)", "gar", "ba", "ge"),
-                ("102668", "세곡리엔파크1단지")
+                ("102668", "세곡리엔파크1단지"),
+                ("107477", "마곡엠밸리7단지")
                 ]
 
         # ("APT_ID", "Date", "N_Housings", "Max_Floors", "Min_Floors")
         correct_infos = [("104651", "2004/01", "28", "7", "7"),
-                         ("102668", "", "395", "13", "10")
+                         ("102668", "", "395", "13", "10"),
+                         ("107477", "2014/06", "1004", "16", "4")
                          ]
 
         try:

@@ -105,10 +105,10 @@ def scrape_apt_info(apt_ids, filepath=path_aptinfo):
                 except:
                     date_simple = ''
 
-                num_housings = table.find(string='총세대수').find_next('td').string.rstrip('세대')
+                num_housings = table.find(string='총세대수').find_next('td').string.split('세대')[0]
 
-                max_floors = table.find(string='최고층').find_next('td').string.rstrip('층')
-                min_floors = table.find(string='최저층').find_next('td').string.rstrip('층')
+                max_floors = table.find(string='최고층').find_next('td').string.split('층')[0]
+                min_floors = table.find(string='최저층').find_next('td').string.split('층')[0]
 
                 listwriter.writerow((apt_id, date_simple, num_housings, max_floors, min_floors))
                 count += 1
