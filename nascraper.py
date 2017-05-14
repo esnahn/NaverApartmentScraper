@@ -1,8 +1,8 @@
 import csv
 from pathlib import Path
 from urllib.request import urlopen, urlretrieve
-
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 '''
 네이버 부동산 아파트 평면도 긁개
@@ -17,10 +17,12 @@ path_sd = "./sidos.csv"
 path_sgg = "./sigungus.csv"
 path_emd = "./eupmyeondongs.csv"
 path_apt = "./apartments.csv"
+path_aptinfo = "./apt_info.csv"
 path_fp = "./floorplans.csv"
 
 dir_fp = "./fp_img/"
 
+### internal variables
 # urls
 loc12_url = "http://land.naver.com/article/cityInfo.nhn?rletTypeCd=A01&cortarNo="
 loc3_url = "http://land.naver.com/article/divisionInfo.nhn?rletTypeCd=A01&cortarNo="
@@ -74,11 +76,50 @@ def read_from_csv(filepath):
     return columns, readlist
 
 
-def scrape_apt_info(apt_ids):
-    pass
+def scrape_apt_info(apt_ids, filepath=path_aptinfo):
+    columns = ["APT_ID", "Date", "N_Housings", "Max_Floors", "Min_Floors"]
+    apt_id_set = {}
+    count = 0
+
+    if Path(filepath).exists():
+        col_from_file, list_from_file = read_from_csv(filepath)
+        assert columns == col_from_file
+        apt_id_set = {x[0] for x in list_from_file}  # "APT_ID"
+    else:
+        with open(filepath, 'w', newline='', encoding='utf-8-sig') as csvfile:
+            listwriter = csv.writer(csvfile)
+            listwriter.writerow(columns)
+
+    with open(filepath, 'a', newline='', encoding='utf-8-sig') as csvfile:
+        listwriter = csv.writer(csvfile)
+
+        for apt_id in apt_ids:
+            if apt_id not in apt_id_set:
+                html = urlopen(apt_url + apt_id)
+                soup = BeautifulSoup(html.read(), 'html.parser')
+                table = soup.find(class_="housing_info")
+
+                date_built = table.find(string='준공년월').find_next('td').string
+                try:
+                    date_simple = datetime.strptime(date_built, '%Y년%m월').strftime('%Y/%m')
+                except:
+                    date_simple = ''
+
+                num_housings = table.find(string='총세대수').find_next('td').string.rstrip('세대')
+
+                max_floors = table.find(string='최고층').find_next('td').string.rstrip('층')
+                min_floors = table.find(string='최저층').find_next('td').string.rstrip('층')
+
+                listwriter.writerow((apt_id, date_simple, num_housings, max_floors, min_floors))
+                count += 1
+                print("Retrieved info for Apt. #{}".format(apt_id))
+            else:
+                print("Apt. #{} was already retrieved.".format(apt_id))
+
+        print("Saved {} items for Information on Apartment Complex".format(count))
 
 
-def scrape_apt_fp(apt_ids, filepath=path_fp, img_dir=dir_fp, overwrite=False):
+def scrape_apt_fp(apt_ids, filepath=path_fp, img_dir=dir_fp, img_overwrite=False):
     columns = ["APT_ID", "FP_ID", "Area", "Entrance", "Rooms", "Baths", "N_Units", "Image"]
     apt_id_set = {}
     count = 0
@@ -119,7 +160,7 @@ def scrape_apt_fp(apt_ids, filepath=path_fp, img_dir=dir_fp, overwrite=False):
                     if i.find('div', class_='thumb').a:
                         fp_img_url = i.find('img')['src']
                         fp_img_path = img_dir + apt_id + '_' + fp_id + '.' + fp_img_url.rsplit('.', 1)[1]
-                        if not Path(fp_img_path).exists() or overwrite:
+                        if not Path(fp_img_path).exists() or img_overwrite:
                             urlretrieve(fp_img_url, fp_img_path)
                     else:
                         fp_img_path = ''
@@ -179,6 +220,7 @@ if __name__ == '__main__':
         _, apartments = read_from_csv(path_apt)
         print("Loaded {} items for Apartment complex from saved file".format(len(apartments)))
 
-    _, apartments = read_from_csv(path_apt)
-    print("Loaded {} items for Apartment complex from saved file".format(len(apartments)))
-    scrape_apt_fp([apt_id for apt_id, _ in apartments], path_fp, dir_fp)
+    apt_ids = [apt[0] for apt in apartments]
+
+    scrape_apt_info(apt_ids, path_aptinfo)
+    scrape_apt_fp(apt_ids, path_fp, dir_fp)

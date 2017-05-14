@@ -93,6 +93,25 @@ class List(unittest.TestCase):
 
 
 class Apartments(unittest.TestCase):
+    def test_scrape_info(self):
+        apts = [("104651", "청일덱스빌(3~7동)", "gar", "ba", "ge"),
+                ("102668", "세곡리엔파크1단지")
+                ]
+
+        # ("APT_ID", "Date", "N_Housings", "Max_Floors", "Min_Floors")
+        correct_infos = [("104651", "2004/01", "28", "7", "7"),
+                         ("102668", "", "395", "13", "10")
+                         ]
+
+        try:
+            os.remove(nascraper.path_aptinfo + "-test")
+        except OSError:
+            pass
+
+        nascraper.scrape_apt_info([apt[0] for apt in apts], nascraper.path_aptinfo + "-test")
+        _, infos = nascraper.read_from_csv(nascraper.path_aptinfo + "-test")
+        self.assertListEqual(infos, correct_infos)
+
     def test_scrape_fp(self):
         apts = [("104651", "청일덱스빌(3~7동)", "gar", "ba", "ge")]
 
