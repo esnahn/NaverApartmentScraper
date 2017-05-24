@@ -193,7 +193,7 @@ def scrape_list2(url_ids, url, div_id):
     return pairs
 
 
-def save_list_retrieve_ids(whatfor_text='???', path, parents, loc_url, loc_id):
+def save_list_retrieve_ids(whatfor_text, path, parents, loc_url, loc_id):
     if not Path(path).exists():
         results = scrape_list2(parents, loc_url, loc_id)
         print("** Retrieved {} items for {} **".format(len(results), whatfor_text))
