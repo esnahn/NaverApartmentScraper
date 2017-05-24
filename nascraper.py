@@ -177,50 +177,83 @@ def scrape_apt_fp(apt_ids, filepath=path_fp, img_dir=dir_fp, img_overwrite=False
     print("Saved {} items for Apartment floorplans".format(count))
 
 
+def scrape_list2(url_ids, url, div_id):
+    # returns a list of (id, name, parent id)
+    pairs = []
+
+    for url_id in url_ids:
+        html = urlopen(url + url_id)
+        soup = BeautifulSoup(html.read(), 'html.parser')
+        options = soup.find(id=div_id).find_all('option', value=True)
+        options = [option for option in options if option['value'].isdigit()]
+
+        print("Retrieved {} items for ID# {}".format(len(options), url_id))
+
+        pairs += [(option['value'], option.text, url_id) for option in options]
+    return pairs
+
+
+def save_list_retrieve_ids(whatfor_text='???', path, parents, loc_url, loc_id):
+    if not Path(path).exists():
+        results = scrape_list2(parents, loc_url, loc_id)
+        print("** Retrieved {} items for {} **".format(len(results), whatfor_text))
+        save_to_csv(path, ["ID", "name", "parent"], results)
+        print("==> Saved to {}".format(path))
+    else:
+        _, results = read_from_csv(path)
+        print("Loaded {} items for {} from saved file".format(len(results), whatfor_text))
+
+    return [result[0] for result in results]
+
+
 if __name__ == '__main__':
-    sidos = []
-    sigungus = []
-    eupmyeondongs = []
-    apartments = []
-    floorplans = []
+    sido_ids = []
+    sigungu_ids = []
+    eupmyeondong_ids = []
+    apartment_ids = []
 
-    if not Path(path_sd).exists():
-        sidos = scrape_list([''], loc12_url, loc1_id)
-        print("** Retrieved {} items for Si/Do **".format(len(sidos)))
-        save_to_csv(path_sd, ["ID", "name"], sidos)
-        print("==> Saved to {}".format(path_sd))
-    else:
-        _, sidos = read_from_csv(path_sd)
-        print("Loaded {} items for Si/Do from saved file".format(len(sidos)))
+    sido_ids = save_list_retrieve_ids("Si/Do", path_sd, [''], loc12_url, loc1_id)
+    sigungu_ids = save_list_retrieve_ids("Si/Gun/Gu", path_sgg, sido_ids, loc12_url, loc2_id)
+    eupmyeondong_ids = save_list_retrieve_ids("Eup/Myeon/Dong", path_emd, sigungu_ids, loc3_url, loc3_id)
+    apartment_ids = save_list_retrieve_ids("Si/Gun/Gu", path_apt, eupmyeondong_ids, loc4_url, loc4_id)
 
-    if not Path(path_sgg).exists():
-        sigungus = scrape_list([sd_id for sd_id, _ in sidos], loc12_url, loc2_id)
-        print("** Retrieved {} items for Si/Gun/Gu **".format(len(sigungus)))
-        save_to_csv(path_sgg, ["ID", "name"], sigungus)
-        print("==> Saved to {}".format(path_sgg))
-    else:
-        _, sigungus = read_from_csv(path_sgg)
-        print("Loaded {} items for Si/Gun/Gu from saved file".format(len(sigungus)))
+    # if not Path(path_sd).exists():
+    #     sidos = scrape_list([''], loc12_url, loc1_id)
+    #     print("** Retrieved {} items for Si/Do **".format(len(sidos)))
+    #     save_to_csv(path_sd, ["ID", "name"], sidos)
+    #     print("==> Saved to {}".format(path_sd))
+    # else:
+    #     _, sidos = read_from_csv(path_sd)
+    #     print("Loaded {} items for Si/Do from saved file".format(len(sidos)))
+    #
+    # if not Path(path_sgg).exists():
+    #     sigungus = scrape_list([sd_id for sd_id, _ in sidos], loc12_url, loc2_id)
+    #     print("** Retrieved {} items for Si/Gun/Gu **".format(len(sigungus)))
+    #     save_to_csv(path_sgg, ["ID", "name"], sigungus)
+    #     print("==> Saved to {}".format(path_sgg))
+    # else:
+    #     _, sigungus = read_from_csv(path_sgg)
+    #     print("Loaded {} items for Si/Gun/Gu from saved file".format(len(sigungus)))
+    #
+    # if not Path(path_emd).exists():
+    #     eupmyeondongs = scrape_list([sgg_id for sgg_id, _ in sigungus], loc3_url, loc3_id)
+    #     print("** Retrieved {} items for Eup/Myeon/Dong **".format(len(eupmyeondongs)))
+    #     save_to_csv(path_emd, ["ID", "name"], eupmyeondongs)
+    #     print("==> Saved to {}".format(path_emd))
+    # else:
+    #     _, eupmyeondongs = read_from_csv(path_emd)
+    #     print("Loaded {} items for Eup/Myeon/Dong from saved file".format(len(eupmyeondongs)))
+    #
+    # if not Path(path_apt).exists():
+    #     apartments = scrape_list([emd_id for emd_id, _ in eupmyeondongs], loc4_url, loc4_id)
+    #     print("** Retrieved {} items for Apartment complex **".format(len(apartments)))
+    #     save_to_csv(path_apt, ["ID", "name"], apartments)
+    #     print("==> Saved to {}".format(path_apt))
+    # else:
+    #     _, apartments = read_from_csv(path_apt)
+    #     print("Loaded {} items for Apartment complex from saved file".format(len(apartments)))
+    #
+    # apartment_ids = [apt[0] for apt in apartments]
 
-    if not Path(path_emd).exists():
-        eupmyeondongs = scrape_list([sgg_id for sgg_id, _ in sigungus], loc3_url, loc3_id)
-        print("** Retrieved {} items for Eup/Myeon/Dong **".format(len(eupmyeondongs)))
-        save_to_csv(path_emd, ["ID", "name"], eupmyeondongs)
-        print("==> Saved to {}".format(path_emd))
-    else:
-        _, eupmyeondongs = read_from_csv(path_emd)
-        print("Loaded {} items for Eup/Myeon/Dong from saved file".format(len(eupmyeondongs)))
-
-    if not Path(path_apt).exists():
-        apartments = scrape_list([emd_id for emd_id, _ in eupmyeondongs], loc4_url, loc4_id)
-        print("** Retrieved {} items for Apartment complex **".format(len(apartments)))
-        save_to_csv(path_apt, ["ID", "name"], apartments)
-        print("==> Saved to {}".format(path_apt))
-    else:
-        _, apartments = read_from_csv(path_apt)
-        print("Loaded {} items for Apartment complex from saved file".format(len(apartments)))
-
-    apt_ids = [apt[0] for apt in apartments]
-
-    scrape_apt_info(apt_ids, path_aptinfo)
-    scrape_apt_fp(apt_ids, path_fp, dir_fp)
+    scrape_apt_info(apartment_ids, path_aptinfo)
+    scrape_apt_fp(apartment_ids, path_fp, dir_fp)
