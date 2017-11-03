@@ -1,0 +1,8 @@
+.idea
+__pycache__
+
+fp_img*
+fp_img*/
+*.csv
+
+hall_of_fame
